@@ -1,9 +1,7 @@
 from fastapi import FastAPI
-from app.db.session import engine, Base
 from app.api.routes.user import router as user_router
 
-# Автоматически создаем таблицы в базе данных (если их еще нет)
-Base.metadata.create_all(bind=engine)
+
 
 # Создаем само приложение FastAPI
 app = FastAPI(title="Bookly API")

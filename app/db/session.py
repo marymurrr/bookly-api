@@ -1,10 +1,21 @@
-from sqlalchemy import create_engine
-# В этой строке добавил импорт declarative_base
-from sqlalchemy.orm import sessionmaker, declarative_base 
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
-engine = create_engine(settings.DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# 1. Сеньорский нюанс: URL базы данных должен начинаться с postgresql+asyncpg://
+# Если в твоем .env написано просто postgresql://, мы можем заменить это на лету:
+DATABASE_URL = settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
 
-# Теперь эта строка сработает, потому что мы импортировали функцию выше
-Base = declarative_base()
+# 2. Создаем АСИНХРОННЫЙ движок
+engine = create_async_engine(DATABASE_URL, echo=True)
+
+# 3. Создаем фабрику АСИНХРОННЫХ сессий
+AsyncSessionLocal = sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
+
+
