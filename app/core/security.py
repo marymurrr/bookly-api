@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import jwt
 from passlib.context import CryptContext
+from fastapi import HTTPException, status
 from app.core.config import settings  # Импортируем наш объект настроек
 
 # Инструмент для работы с хэшированием паролей (алгоритм bcrypt)
@@ -46,3 +47,26 @@ class SecurityManager:
         
         # Возвращаем готовую строчку токена
         return encoded_jwt
+    
+    @staticmethod
+    def decode_access_token(token: str) -> dict | None:
+        """
+        Принимает зашифрованную строку токена, проверяет её подпись и срок годности.
+        Если токен валидный — возвращает расшифрованные данные (payload).
+        Если токен "протух" или подделан — выкидывает ошибку 401.
+        """
+        try:
+            # Метод jwt.decode сам проверит время exp и валидность секретного ключа
+            payload = jwt.decode(
+                token, 
+                settings.JWT_SECRET_KEY, 
+                algorithms=[settings.JWT_ALGORITHM]
+            )
+            return payload
+        except jwt.PyJWTError:
+            # Если токен подделан, изменен или истек срок его действия
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Невалидный или просроченный токен доступа",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
